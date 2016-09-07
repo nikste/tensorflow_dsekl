@@ -138,80 +138,80 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
                                           sess.graph)
     test_writer = tf.train.SummaryWriter('./logs' + log_prefix + '/test')
 
+
+    # for ordered batches
+    max_i_exp = compute_num_batches(y.shape[0], n_exp)
+    max_i_pred = compute_num_batches(y.shape[0], n_exp)
+
     # training
     for i in range(1, nIter):
         # TODO: iterate through whole training set separately for expansion and predicate coefficients?
         samples_seen = i * n_pred
         if learning_rate_start < 0:
-            lr_discounted = - learning_rate_start / (np.ceil(float(samples_seen) / y.shape[0]))
+            lr_discounted = - learning_rate_start / float(i)
         else:
             lr_discounted = learning_rate_start
+        print "lr_discounte", lr_discounted
 
-        rnd_pred = chose_indices(i, n_pred, with_replacement, ordered_batches, y.shape[0])
+        for i_pred in range(0, max_i_pred):
+            for i_exp in range(0, max_i_exp):
+                rnd_pred = chose_indices(i, n_pred, with_replacement, ordered_batches, y.shape[0])
+                rnd_exp = chose_indices(i, n_exp, with_replacement, ordered_batches, y.shape[0])
+                _, accuracy__, summary__ = sess.run([train_step, accuracy, merged], feed_dict={
+                    input_x_1: x,
+                    input_x_2: x,
+                    y_: y,
+                    pred_coef: rnd_pred,
+                    exp_coef: rnd_exp,
+                    learning_rate: lr_discounted})
+                print accuracy__
+
+        # evaluation
+        rnd_pred = chose_indices(i, n_pred, with_replacement, ordered_batches, y_test.shape[0])
         rnd_exp = chose_indices(i, n_exp, with_replacement, ordered_batches, y.shape[0])
-
         t_start = datetime.datetime.now()
-        print "starting one training batch", t_start
-        _, accuracy__, summary__ = sess.run([train_step, accuracy, merged], feed_dict={
-            input_x_1: x,
-            input_x_2: x,
-            y_: y,
-            pred_coef: rnd_pred,
-            exp_coef: rnd_exp,
-            learning_rate: lr_discounted})
-        print "took", datetime.datetime.now() - t_start
+        accuracy_test, summary_test = test(sess, with_replacement, rnd_pred, rnd_exp, lr_discounted, x, y, x_test, y_test, input_x_1, input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged)
+        test_writer.add_summary(summary_test, i)
 
-        if i % 30 == 1:
-            # evaluation
-            rnd_pred = chose_indices(i, n_pred, with_replacement, ordered_batches, y_test.shape[0])
-            rnd_exp = chose_indices(i, n_exp, with_replacement, ordered_batches, y.shape[0])
-            t_start = datetime.datetime.now()
-            accuracy_test, summary_test = test(sess, with_replacement, rnd_pred, rnd_exp, lr_discounted, x, y, x_test, y_test, input_x_1, input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged)
-            test_writer.add_summary(summary_test, i)
+        #print_alpha_histogram(sess, alphas_exp)
 
-            #print_alpha_histogram(sess, alphas_exp)
+        #zero_count__ = sess.run([zero_count])
+        #print "zero_count", zero_count__
 
-            #zero_count__ = sess.run([zero_count])
-            #print "zero_count", zero_count__
+        # regularization_loss_l2__, hinge_loss_part__, loss__ = sess.run([regularization_loss_l2, hinge_loss_part, loss], feed_dict={
+        # input_x_1: x,
+        # input_x_2: x,
+        # y_: y,
+        # pred_coef: rnd_pred,
+        # exp_coef: rnd_exp,
+        # learning_rate: lr_discounted})
+        # print "losses", regularization_loss_l2__, hinge_loss_part__, loss__
 
-            # regularization_loss_l2__, hinge_loss_part__, loss__ = sess.run([regularization_loss_l2, hinge_loss_part, loss], feed_dict={
-            # input_x_1: x,
-            # input_x_2: x,
-            # y_: y,
-            # pred_coef: rnd_pred,
-            # exp_coef: rnd_exp,
-            # learning_rate: lr_discounted})
-            # print "losses", regularization_loss_l2__, hinge_loss_part__, loss__
+        #print "accuracy_test", accuracy_test, lr_discounted
+        t_start = datetime.datetime.now()
+        print "testing full", t_start
+        accuracy_test = test_with_full_model(sess, with_replacement, n_pred, n_exp, lr_discounted, x, y, x_test, y_test, input_x_1,
+                         input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged)
 
-            #print "accuracy_test", accuracy_test, lr_discounted
-            t_start = datetime.datetime.now()
-            print "testing full", t_start
-            accuracy_test = test_with_full_model(sess, with_replacement, n_pred, n_exp, lr_discounted, x, y, x_test, y_test, input_x_1,
-                             input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged)
+        print "full accuracy on test", accuracy_test, "took", datetime.datetime.now() - t_start
 
-            print "full accuracy on test", accuracy_test, "took", datetime.datetime.now() - t_start
-
-        print i, "accuracy_train", accuracy__, "samples_seen", samples_seen / float(y.shape[0])
         train_writer.add_summary(summary__, i)
 
 
+def compute_num_batches(nmax, n):
+    if n > nmax:
+        n = nmax
+    n_batches = int(nmax / n)
+    n_batch_rest = 0
+    if nmax / float(n) - n_batches > 0:
+        n_batch_rest = 1
+
+    return n_batches + n_batch_rest
+
 def test_with_full_model(sess, with_replacement, n_pred, n_exp, lr_discounted, x, y, x_test, y_test, input_x_1, input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged):
 
-    # how many testing data batches do we need ?
-    num_batches_pred_test = int(y_test.shape[0] / n_pred)
-    not_divisible_pred_test = 0
-    if y_test.shape[0] / float(n_pred) - num_batches_pred_test > 0:
-        not_divisible_pred_test = 1
-
-    max_i_test = num_batches_pred_test + not_divisible_pred_test
-
-    # how many training data batches do we need ?
-    num_batches_exp_train = int(y.shape[0] / n_exp)
-    not_divisible_exp_train = 0
-    if y.shape[0] / float(n_exp) - num_batches_exp_train > 0:
-        not_divisible_exp_train = 1
-
-    max_i_train = num_batches_exp_train + not_divisible_exp_train
+    max_i_test = compute_num_batches(y_test.shape[0], n_pred)
+    max_i_train = compute_num_batches(y.shape[0], n_exp)
 
     # create weighted sum of accuracies
     accuracy_test = 0.

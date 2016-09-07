@@ -67,11 +67,11 @@ def prepare_covertype(x, y, x_test, y_test, scale=True):
         x, y, x_test, y_test = scale_data(x, y, x_test, y_test)
         print "scaled"
     return x, y, x_test, y_test
-# x, y, x_test, y_test = get_mnist_full(binary=True)
+x, y, x_test, y_test = get_mnist_full(binary=True)
 # x, y, x_test, y_test = get_mnist(0.9, binary=True)
 
 # x2, y2, x_test2, y_test2 = get_mnist(0.9, binary=True)
-x, y, x_test, y_test = get_covertype(0.9, binary=True)
+# x, y, x_test, y_test = get_covertype(0.9, binary=True)
 
 # x, x_test = scale_data(x, x_test, with_mean=True, with_std=True)
 print "loaded", x.shape[0], "datapoints"
@@ -122,9 +122,9 @@ print "y_test.shape[0]", y_test.shape[0]
 # n_exp = 10000
 # gamma = 0.01
 # C = .1
-n_pred = 25000#y.shape[0] #y.shape[0]#15000#100#
+n_pred = 1000#y.shape[0] #y.shape[0]#15000#100#
 print "n_pred", n_pred
-n_exp = 25000#y.shape[0] #y.shape[0]#15000#100#
+n_exp = 1000#y.shape[0] #y.shape[0]#15000#100#
 print "n_exp", n_exp
 stupidclassifier = reference_classifier(x, y)
 # n_pred = y.shape[0]
