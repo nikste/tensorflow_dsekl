@@ -141,7 +141,10 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
 
     # for ordered batches
     max_i_exp = compute_num_batches(y.shape[0], n_exp)
-    max_i_pred = compute_num_batches(y.shape[0], n_exp)
+    max_i_pred = compute_num_batches(y.shape[0], n_pred)
+
+    # for tracking difference in parameters
+    alphas_old = sess.run(alphas)
 
     # training
     for i in range(1, nIter):
@@ -197,6 +200,9 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
 
         train_writer.add_summary(summary__, i)
 
+        alphas__ = sess.run(alphas)
+        print "alpha delta", np.sum(np.abs(alphas__ - alphas_old))
+        alphas_old = alphas__
 
 def compute_num_batches(nmax, n):
     if n > nmax:
@@ -229,6 +235,7 @@ def test_with_full_model(sess, with_replacement, n_pred, n_exp, lr_discounted, x
     accuracy_test = accuracy_test / float(y_test.shape[0])
 
     return accuracy_test
+
 
 def test(sess, with_replacement, rnd_pred, rnd_exp, lr_discounted, x, y, x_test, y_test, input_x_1, input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged):
     accuracy_test, summary__ = sess.run([accuracy, merged], feed_dict={
