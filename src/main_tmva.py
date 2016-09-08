@@ -38,7 +38,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.svm import SVC
 
 from data_generator import get_mnist, get_gaussian, get_gaussian_xor, get_covertype, scale_data, get_mnist_full
-import tmva
+
 from src.models.tf_svm_new import train_svm
 from src.visualizer import visualize_gaussians, visualize_mnist
 
@@ -67,13 +67,13 @@ def prepare_covertype(x, y, x_test, y_test, scale=True):
         x, y, x_test, y_test = scale_data(x, y, x_test, y_test)
         print "scaled"
     return x, y, x_test, y_test
-x, y, x_test, y_test = get_mnist_full(binary=True)
+# x, y, x_test, y_test = get_mnist_full(binary=True)
 # x, y, x_test, y_test = get_mnist(0.9, binary=True)
 
 # x2, y2, x_test2, y_test2 = get_mnist(0.9, binary=True)
-# x, y, x_test, y_test = get_covertype(0.9, binary=True)
+x, y, x_test, y_test = get_covertype(0.9, binary=True)
 
-# x, x_test = scale_data(x, x_test, with_mean=True, with_std=True)
+x, x_test = scale_data(x, x_test, with_mean=True, with_std=True)
 print "loaded", x.shape[0], "datapoints"
 print "scaling data", datetime.datetime.now()
 # x, y, x_test, y_test = scale_data(x, y, x_test, y_test, with_mean=True, with_std=True)
@@ -102,7 +102,7 @@ print "scaled data", datetime.datetime.now()
 # y = y[:int(x.shape[0] * 0.1)]
 # x_test = x_test[:int(x_test.shape[0] * 0.1)]
 # y_test = y_test[:int(y_test.shape[0] * 0.1)]
-scale_down_fac = 1
+scale_down_fac = 10
 x = x[0:int(x.shape[0]):scale_down_fac]
 y = y[0:int(y.shape[0]):scale_down_fac]
 x_test = x_test[0:int(x_test.shape[0]):scale_down_fac]
@@ -122,9 +122,9 @@ print "y_test.shape[0]", y_test.shape[0]
 # n_exp = 10000
 # gamma = 0.01
 # C = .1
-n_pred = 1000#y.shape[0] #y.shape[0]#15000#100#
+n_pred = 10000#y.shape[0] #y.shape[0]#15000#100#
 print "n_pred", n_pred
-n_exp = 1000#y.shape[0] #y.shape[0]#15000#100#
+n_exp = 10000#y.shape[0] #y.shape[0]#15000#100#
 print "n_exp", n_exp
 stupidclassifier = reference_classifier(x, y)
 # n_pred = y.shape[0]
@@ -145,7 +145,7 @@ C_scaled = 1
 # gamma = 1.
 # C_scaled = 1.
 train_svm(x, y, x_test, y_test, nIter=20000, C=C_scaled, gamma=gamma, n_pred=n_pred, n_exp=n_exp, learning_rate_start=-1., ordered_batches=False,
-                                    with_replacement=False, most_common_label=stupidclassifier, log_prefix="/covertype_l2_2000_unsorted")
+                                    with_replacement=False, most_common_label=stupidclassifier, log_prefix="/covertype_l2_10000_sorted_part10")
 
 
 # svc = SVC(C=0.1, gamma=0.01)

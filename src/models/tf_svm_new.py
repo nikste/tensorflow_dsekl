@@ -143,6 +143,8 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
     max_i_exp = compute_num_batches(y.shape[0], n_exp)
     max_i_pred = compute_num_batches(y.shape[0], n_pred)
 
+    print "max_i_pred", max_i_pred
+    print "max_i_exp", max_i_exp
     # for tracking difference in parameters
     alphas_old = sess.run(alphas)
 
@@ -167,14 +169,18 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
                     pred_coef: rnd_pred,
                     exp_coef: rnd_exp,
                     learning_rate: lr_discounted})
-                print accuracy__
+
+                max_batches = max_i_exp * max_i_pred
+                num_batches = (max_batches * i) + (i_pred * max_i_exp) + i_exp
+                train_writer.add_summary(summary__, num_batches)
+                print i_pred, i_exp, accuracy__
 
         # evaluation
         rnd_pred = chose_indices(i, n_pred, with_replacement, ordered_batches, y_test.shape[0])
         rnd_exp = chose_indices(i, n_exp, with_replacement, ordered_batches, y.shape[0])
         t_start = datetime.datetime.now()
         accuracy_test, summary_test = test(sess, with_replacement, rnd_pred, rnd_exp, lr_discounted, x, y, x_test, y_test, input_x_1, input_x_2, y_, pred_coef, exp_coef, accuracy, learning_rate, merged)
-        test_writer.add_summary(summary_test, i)
+        test_writer.add_summary(summary_test, num_batches)
 
         #print_alpha_histogram(sess, alphas_exp)
 
@@ -198,7 +204,7 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
 
         print "full accuracy on test", accuracy_test, "took", datetime.datetime.now() - t_start
 
-        train_writer.add_summary(summary__, i)
+
 
         alphas__ = sess.run(alphas)
         print "alpha delta", np.sum(np.abs(alphas__ - alphas_old))
