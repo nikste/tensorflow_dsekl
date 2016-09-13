@@ -19,6 +19,14 @@ def scale_data(x, x_test, with_mean=True, with_std=True):
     return x, x_test
 
 
+def subsample_data(x, y, x_test, y_test, scale_down_fac):
+    x = x[0:int(x.shape[0]):scale_down_fac]
+    y = y[0:int(y.shape[0]):scale_down_fac]
+    x_test = x_test[0:int(x_test.shape[0]):scale_down_fac]
+    y_test = y_test[0:int(y_test.shape[0]):scale_down_fac]
+    return x, y, x_test, y_test
+
+
 def convert_to_1_hot(in_data, max_val):
     a = np.array(in_data)
     out_data = np.zeros((len(in_data),max_val))

@@ -59,16 +59,17 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
         pred_coef = tf.placeholder(tf.int32, [None], name="predicate")
         exp_coef = tf.placeholder(tf.int32, [None], name="xpansion")
 
-    with tf.name_scope('alphas_and_bias'):
-        alphas = tf.Variable(tf.truncated_normal([n_inputs, 1], mean=0.5, stddev=.1) , name="alphas")
-        alphas_exp = alphas
+
 
     with tf.name_scope('gathered_inputs_alphas_gt'):
-        alphas_gathered_exp = tf.gather(alphas_exp, exp_coef)
         y_gathered_pred = tf.gather(y_, pred_coef)
-
         input_x_gathered_pred = tf.gather(input_x_1, pred_coef)
         input_x_gathered_exp = tf.gather(input_x_2, exp_coef)
+
+    with tf.name_scope('alphas_and_bias'):
+        alphas = tf.Variable(tf.truncated_normal([n_inputs, 1], mean=0.0, stddev=.1) * 1. , name="alphas")
+        alphas_exp = alphas
+        alphas_gathered_exp = tf.gather(alphas_exp, exp_coef)
 
     with tf.name_scope('kernel_map'):
         if kernel_type == "gaussian":
@@ -96,7 +97,7 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
         hinge_loss = tf.reduce_sum(hinge_max, name='hinge_loss')
 
         # squared error regularization loss for alphas
-        regularization_loss_l2 = tf.reduce_sum(tf.square(alphas_gathered_exp), name='regularization_sq_loss_l2')
+        regularization_loss_l2 = tf.reduce_sum(tf.pow(alphas_gathered_exp, 10), name='regularization_sq_loss_l2')
 
         # l1 regularization loss for alphas
         regularization_loss_l1 = tf.reduce_sum(tf.abs(alphas_gathered_exp), name='regularization_loss_l1')
@@ -174,6 +175,7 @@ def train_svm(x, y, x_test, y_test, C=1, gamma=0.001, nIter=100, kernel_type="ga
                 num_batches = (max_batches * i) + (i_pred * max_i_exp) + i_exp
                 train_writer.add_summary(summary__, num_batches)
                 print i_pred, i_exp, accuracy__
+                print_alpha_histogram(sess, alphas_exp)
 
         # evaluation
         rnd_pred = chose_indices(i, n_pred, with_replacement, ordered_batches, y_test.shape[0])
